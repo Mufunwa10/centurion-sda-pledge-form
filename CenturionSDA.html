@@ -447,14 +447,20 @@
             margin-top: 15px;
             font-size: 0.9rem;
             min-height: 20px;
+            padding: 10px;
+            border-radius: 5px;
         }
         
         .status-success {
             color: var(--success);
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
         }
         
         .status-error {
             color: #d32f2f;
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
         }
         
         @media (max-width: 768px) {
@@ -743,8 +749,8 @@
     </div>
 
     <script>
-        // Google Apps Script URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqdRW2yKo8tR0wqNbAYEEAQ43KnGSKBZuyiDkCrHfysX0mtn6bijOCHFqL8hwagIed/exec';
+        // Updated Google Apps Script URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzS9luUj8qqsLHvZ7ZKKh-KluJ2k9EHemLtAuo-VUyOlweUiwiXl9Y8VBqHqP30Y5OPHA/exec';
         
         document.addEventListener('DOMContentLoaded', function() {
             // Set default date to today
@@ -820,6 +826,19 @@
                     return;
                 }
                 
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showStatus('Please enter a valid email address', 'error');
+                    return;
+                }
+                
+                // Validate amount is a positive number
+                if (isNaN(amount) || parseFloat(amount) <= 0) {
+                    showStatus('Please enter a valid pledge amount', 'error');
+                    return;
+                }
+                
                 // Disable submit button and show loading
                 const submitBtn = document.getElementById('submitBtn');
                 submitBtn.disabled = true;
@@ -850,7 +869,7 @@
                     
                     const result = await response.json();
                     
-                    if (result.result === "success") {
+                    if (result.success) {
                         // Show success message
                         document.getElementById('successMessage').style.display = 'block';
                         document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
@@ -866,7 +885,9 @@
                         
                         showStatus('Pledge submitted successfully!', 'success');
                     } else {
-                        showStatus('Submission failed. Please try again.', 'error');
+                        // Show detailed error message from Google Apps Script
+                        const errorMessage = result.error || 'Submission failed. Please try again.';
+                        showStatus(`Error: ${errorMessage}`, 'error');
                     }
                 } catch (error) {
                     showStatus('Network error. Please check your connection and try again.', 'error');

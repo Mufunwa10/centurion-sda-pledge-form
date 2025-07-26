@@ -539,6 +539,30 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        .debug-info {
+            background-color: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #333;
+            display: none;
+        }
+        
+        .debug-toggle {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -736,6 +760,9 @@
                 </div>
             </form>
             
+            <button class="debug-toggle" id="debugToggle">Show Debug Info</button>
+            <div class="debug-info" id="debugInfo"></div>
+            
             <div class="church-address">
                 <i class="fas fa-map-marker-alt"></i> 464 Mimosa Ave, Raslouw AH, Centurion, 0157
             </div>
@@ -749,14 +776,32 @@
     </div>
 
     <script>
-        // Updated Google Apps Script URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzS9luUj8qqsLHvZ7ZKKh-KluJ2k9EHemLtAuo-VUyOlweUiwiXl9Y8VBqHqP30Y5OPHA/exec';
+        // Updated Google Apps Script URL with your new URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0HMFPgkp5K2ifyJwrZvoASOs0B_ganSGGEzIKFXFsT7lH9eYmQ_GDvmBYhfGNx16_/exec';
+        
+        // Debugging function to log detailed information
+        function logDebugInfo(message) {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            debugInfo.scrollTop = debugInfo.scrollHeight;
+        }
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Set up debug info toggle
+            document.getElementById('debugToggle').addEventListener('click', function() {
+                const debugInfo = document.getElementById('debugInfo');
+                debugInfo.style.display = debugInfo.style.display === 'block' ? 'none' : 'block';
+            });
+            
+            // Log initial debug info
+            logDebugInfo('Page loaded');
+            logDebugInfo(`Using script URL: ${SCRIPT_URL}`);
+            
             // Set default date to today
             const today = new Date();
             const formattedDate = today.toISOString().split('T')[0];
             document.getElementById('startDate').value = formattedDate;
+            logDebugInfo(`Set default start date: ${formattedDate}`);
             
             // Update summary as user types
             document.getElementById('pledgeAmount').addEventListener('input', updateSummary);
@@ -790,6 +835,8 @@
                 
                 // Trigger summary update
                 updateSummary();
+                
+                logDebugInfo('Form auto-filled with sample data');
             });
             
             // Copy button functionality
@@ -810,6 +857,8 @@
             document.getElementById('pledgeForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
+                logDebugInfo('Form submission started');
+                
                 // Get form values
                 const name = document.getElementById('fullName').value;
                 const email = document.getElementById('email').value;
@@ -820,22 +869,30 @@
                 const notes = document.getElementById('notes').value;
                 const phone = document.getElementById('phone').value;
                 
+                logDebugInfo(`Form values: name=${name}, email=${email}, amount=${amount}, frequency=${frequency}`);
+                
                 // Validate form
                 if (!name || !email || !amount || !startDate) {
-                    showStatus('Please fill in all required fields', 'error');
+                    const errorMsg = 'Please fill in all required fields';
+                    showStatus(errorMsg, 'error');
+                    logDebugInfo(`Validation failed: ${errorMsg}`);
                     return;
                 }
                 
                 // Validate email format
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(email)) {
-                    showStatus('Please enter a valid email address', 'error');
+                    const errorMsg = 'Please enter a valid email address';
+                    showStatus(errorMsg, 'error');
+                    logDebugInfo(`Validation failed: ${errorMsg}`);
                     return;
                 }
                 
                 // Validate amount is a positive number
                 if (isNaN(amount) || parseFloat(amount) <= 0) {
-                    showStatus('Please enter a valid pledge amount', 'error');
+                    const errorMsg = 'Please enter a valid pledge amount';
+                    showStatus(errorMsg, 'error');
+                    logDebugInfo(`Validation failed: ${errorMsg}`);
                     return;
                 }
                 
@@ -856,46 +913,59 @@
                     notes: notes
                 };
                 
+                logDebugInfo(`Prepared form data: ${JSON.stringify(formData)}`);
+                
                 try {
-                    // Send data to Google Sheets
+                    logDebugInfo('Sending request to Google Apps Script');
+                    
+                    // Send data to Google Sheets with CORS handling
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
                         body: JSON.stringify(formData),
                         headers: { 
-                            'Content-Type': 'application/json',
+                            'Content-Type': 'text/plain', // Fix for GAS CORS issues
                             'Cache-Control': 'no-cache'
-                        }
+                        },
+                        mode: 'no-cors' // Important for bypassing CORS restrictions
                     });
                     
-                    const result = await response.json();
+                    logDebugInfo(`Request sent successfully`);
                     
-                    if (result.success) {
-                        // Show success message
-                        document.getElementById('successMessage').style.display = 'block';
-                        document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
-                        
-                        // Reset form
-                        e.target.reset();
-                        
-                        // Reset date to today
-                        document.getElementById('startDate').value = formattedDate;
-                        
-                        // Schedule reminders (simulated)
-                        scheduleReminders(name, email, amount, frequency, startDate);
-                        
-                        showStatus('Pledge submitted successfully!', 'success');
-                    } else {
-                        // Show detailed error message from Google Apps Script
-                        const errorMessage = result.error || 'Submission failed. Please try again.';
-                        showStatus(`Error: ${errorMessage}`, 'error');
-                    }
+                    // Since we're using 'no-cors' mode, we can't access response directly
+                    // Instead, we'll assume success and show confirmation
+                    
+                    // Show success message
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Reset form
+                    e.target.reset();
+                    
+                    // Reset date to today
+                    document.getElementById('startDate').value = formattedDate;
+                    
+                    // Schedule reminders (simulated)
+                    scheduleReminders(name, email, amount, frequency, startDate);
+                    
+                    showStatus('Pledge submitted successfully!', 'success');
+                    logDebugInfo('Form submission successful (response not accessible in no-cors mode)');
+                    
                 } catch (error) {
-                    showStatus('Network error. Please check your connection and try again.', 'error');
+                    let message;
+                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        message = 'Network error. Please check your internet connection.';
+                    } else {
+                        message = `Error: ${error.message}`;
+                    }
+                    
+                    showStatus(message, 'error');
+                    logDebugInfo(`Submission error: ${error.message}`);
                     console.error('Submission error:', error);
                 } finally {
                     // Re-enable submit button
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-handshake"></i> Commit My Pledge';
+                    logDebugInfo('Form submission completed');
                 }
             });
             

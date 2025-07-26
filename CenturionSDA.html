@@ -352,6 +352,13 @@
             box-shadow: 0 7px 20px rgba(44, 94, 146, 0.4);
         }
         
+        .submit-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
         .footer {
             text-align: center;
             padding: 25px;
@@ -435,6 +442,21 @@
             font-size: 1.2rem;
         }
         
+        .status-message {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+        
+        .status-success {
+            color: var(--success);
+        }
+        
+        .status-error {
+            color: #d32f2f;
+        }
+        
         @media (max-width: 768px) {
             .header {
                 padding: 25px 15px;
@@ -496,6 +518,21 @@
             border-radius: 8px;
             background: rgba(44, 94, 146, 0.05);
         }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -524,18 +561,18 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="fullName">Full Name *</label>
-                            <input type="text" id="fullName" required autocomplete="name">
+                            <input type="text" id="fullName" name="fullName" required autocomplete="name">
                         </div>
                         <div class="form-group">
                             <label for="email">Email Address *</label>
-                            <input type="email" id="email" required autocomplete="email">
+                            <input type="email" id="email" name="email" required autocomplete="email">
                         </div>
                     </div>
                     
                     <div class="form-row">
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" autocomplete="tel">
+                            <input type="tel" id="phone" name="phone" autocomplete="tel">
                         </div>
                         <div class="form-group">
                             <button type="button" class="auto-fill-btn" id="autoFillBtn">
@@ -556,7 +593,7 @@
                             <label for="pledgeAmount">Total Pledge Amount (until Dec 2025) *</label>
                             <div class="amount-container">
                                 <span>ZAR</span>
-                                <input type="number" id="pledgeAmount" min="1" required>
+                                <input type="number" id="pledgeAmount" name="pledgeAmount" min="1" required>
                             </div>
                         </div>
                         <div class="form-group">
@@ -581,11 +618,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="startDate">Start Date *</label>
-                            <input type="date" id="startDate" required>
+                            <input type="date" id="startDate" name="startDate" required>
                         </div>
                         <div class="form-group">
                             <label for="preferredMethod">Preferred Payment Method</label>
-                            <select id="preferredMethod">
+                            <select id="preferredMethod" name="preferredMethod">
                                 <option value="">Select method</option>
                                 <option value="online">Online Payment</option>
                                 <option value="bank-transfer">Bank Transfer</option>
@@ -597,7 +634,7 @@
                     
                     <div class="form-group">
                         <label for="notes">Additional Notes (Optional)</label>
-                        <textarea id="notes" rows="3" placeholder="Any special instructions for your pledge..."></textarea>
+                        <textarea id="notes" name="notes" rows="3" placeholder="Any special instructions for your pledge..."></textarea>
                     </div>
                 </div>
                 
@@ -679,9 +716,10 @@
                 </div>
                 
                 <div class="btn-container">
-                    <button type="submit" class="submit-btn">
+                    <button type="submit" class="submit-btn" id="submitBtn">
                         <i class="fas fa-handshake"></i> Commit My Pledge
                     </button>
+                    <div class="status-message" id="statusMessage"></div>
                 </div>
                 
                 <div class="success-message" id="successMessage">
@@ -705,6 +743,9 @@
     </div>
 
     <script>
+        // Google Apps Script URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqdRW2yKo8tR0wqNbAYEEAQ43KnGSKBZuyiDkCrHfysX0mtn6bijOCHFqL8hwagIed/exec';
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Set default date to today
             const today = new Date();
@@ -760,7 +801,7 @@
             });
             
             // Form submission
-            document.getElementById('pledgeForm').addEventListener('submit', function(e) {
+            document.getElementById('pledgeForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 // Get form values
@@ -770,24 +811,71 @@
                 const frequency = document.querySelector('input[name="frequency"]:checked').value;
                 const startDate = document.getElementById('startDate').value;
                 const method = document.getElementById('preferredMethod').value;
+                const notes = document.getElementById('notes').value;
+                const phone = document.getElementById('phone').value;
                 
                 // Validate form
                 if (!name || !email || !amount || !startDate) {
-                    alert('Please fill in all required fields');
+                    showStatus('Please fill in all required fields', 'error');
                     return;
                 }
                 
-                // Show success message
-                document.getElementById('successMessage').style.display = 'block';
+                // Disable submit button and show loading
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="spinner"></div> Processing...';
                 
-                // Scroll to success message
-                document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                // Prepare data for Google Sheets
+                const formData = {
+                    fullName: name,
+                    email: email,
+                    phone: phone,
+                    pledgeAmount: amount,
+                    frequency: frequency,
+                    startDate: startDate,
+                    preferredMethod: method,
+                    notes: notes
+                };
                 
-                // Schedule reminders (simulated in this frontend version)
-                scheduleReminders(name, email, amount, frequency, startDate);
-                
-                // In a real implementation, this would submit to a server
-                console.log('Pledge submitted:', {name, email, amount, frequency, startDate, method});
+                try {
+                    // Send data to Google Sheets
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(formData),
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Cache-Control': 'no-cache'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.result === "success") {
+                        // Show success message
+                        document.getElementById('successMessage').style.display = 'block';
+                        document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Reset form
+                        e.target.reset();
+                        
+                        // Reset date to today
+                        document.getElementById('startDate').value = formattedDate;
+                        
+                        // Schedule reminders (simulated)
+                        scheduleReminders(name, email, amount, frequency, startDate);
+                        
+                        showStatus('Pledge submitted successfully!', 'success');
+                    } else {
+                        showStatus('Submission failed. Please try again.', 'error');
+                    }
+                } catch (error) {
+                    showStatus('Network error. Please check your connection and try again.', 'error');
+                    console.error('Submission error:', error);
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-handshake"></i> Commit My Pledge';
+                }
             });
             
             // Initial summary update
@@ -841,39 +929,29 @@
                 
                 if (frequency === 'one-time') {
                     console.log(`Sending one-time payment reminder to ${email} for tomorrow`);
-                    // In real implementation, this would send an email
                 } else if (frequency === 'monthly') {
                     console.log(`Setting up monthly reminders for ${email} starting from ${startDate}`);
-                    // Calculate all payment dates
-                    const start = new Date(startDate);
-                    const end = new Date('2025-12-31');
-                    
-                    while (start <= end) {
-                        // Schedule reminder one day before payment
-                        const reminderDate = new Date(start);
-                        reminderDate.setDate(reminderDate.getDate() - 1);
-                        
-                        console.log(`Scheduled reminder for ${reminderDate.toDateString()}`);
-                        
-                        // Move to next month
-                        start.setMonth(start.getMonth() + 1);
-                    }
                 } else if (frequency === 'quarterly') {
                     console.log(`Setting up quarterly reminders for ${email} starting from ${startDate}`);
-                    const start = new Date(startDate);
-                    const end = new Date('2025-12-31');
-                    
-                    while (start <= end) {
-                        // Schedule reminder one day before payment
-                        const reminderDate = new Date(start);
-                        reminderDate.setDate(reminderDate.getDate() - 1);
-                        
-                        console.log(`Scheduled reminder for ${reminderDate.toDateString()}`);
-                        
-                        // Move to next quarter
-                        start.setMonth(start.getMonth() + 3);
-                    }
                 }
+            }
+            
+            function showStatus(message, type) {
+                const statusElement = document.getElementById('statusMessage');
+                statusElement.textContent = message;
+                statusElement.className = 'status-message';
+                
+                if (type === 'success') {
+                    statusElement.classList.add('status-success');
+                } else if (type === 'error') {
+                    statusElement.classList.add('status-error');
+                }
+                
+                // Clear status after 5 seconds
+                setTimeout(() => {
+                    statusElement.textContent = '';
+                    statusElement.className = 'status-message';
+                }, 5000);
             }
         });
     </script>

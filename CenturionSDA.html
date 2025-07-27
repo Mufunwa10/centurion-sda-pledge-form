@@ -582,6 +582,23 @@
             font-size: 1.2rem;
         }
         
+        .contact-phone {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 15px;
+            border-radius: 30px;
+            background: #e6f2ff;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        .contact-phone:hover {
+            background: #d0e5ff;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(44, 94, 146, 0.2);
+        }
+        
         .contact-email {
             color: var(--primary);
             text-decoration: none;
@@ -592,30 +609,11 @@
             text-decoration: underline;
         }
         
-        .confirmation-email {
-            background: #e6f7ff;
-            border-left: 4px solid #1890ff;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 0 8px 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .confirmation-email i {
-            color: #1890ff;
-            font-size: 2rem;
-        }
-        
-        .confirmation-content {
-            flex: 1;
-        }
-        
-        .confirmation-content h4 {
-            color: var(--primary);
-            margin-bottom: 5px;
-            font-family: 'Montserrat', sans-serif;
+        .call-note {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--gray);
         }
     </style>
 </head>
@@ -768,10 +766,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="info-text" style="margin-top: 15px;">
-                        <i class="fas fa-info-circle"></i> For cash payments, please deliver to the church office during business hours.
-                    </div>
                 </div>
                 
                 <div class="summary-card">
@@ -808,35 +802,29 @@
                 <div class="success-message" id="successMessage">
                     <h3><i class="fas fa-check-circle"></i> Pledge Received!</h3>
                     <p>Thank you for your commitment to support the Centurion SDA Building Fund.</p>
-                    <p>We've sent a confirmation to your email. You'll receive payment reminders one day before each scheduled payment date.</p>
+                    <p>A confirmation has been sent to your email. You'll receive payment reminders one day before each scheduled payment date.</p>
                     <p><strong>May God bless you abundantly for your generosity!</strong></p>
                 </div>
             </form>
             
-            <div class="confirmation-email">
-                <i class="fas fa-envelope-circle-check"></i>
-                <div class="confirmation-content">
-                    <h4>Email Confirmation</h4>
-                    <p>After submitting your pledge, you'll receive a thank-you email from <strong>centurion@toc.adventist.org</strong> with your pledge details.</p>
-                </div>
-            </div>
-            
             <div class="contact-container">
                 <div class="contact-card">
                     <h3>Elder T. Ramugumo</h3>
-                    <div class="contact-info">
+                    <a href="tel:+27833334656" class="contact-phone">
                         <i class="fas fa-phone contact-icon"></i>
-                        <span>+27 83 333 4656</span>
-                    </div>
+                        +27 83 333 4656
+                    </a>
                 </div>
                 <div class="contact-card">
                     <h3>Elder H. Salani</h3>
-                    <div class="contact-info">
+                    <a href="tel:+27826435143" class="contact-phone">
                         <i class="fas fa-phone contact-icon"></i>
-                        <span>+27 82 643 5143</span>
-                    </div>
+                        +27 82 643 5143
+                    </a>
                 </div>
             </div>
+            
+            <p class="call-note">Click on a phone number to call directly from your device</p>
             
             <div class="church-address">
                 <i class="fas fa-map-marker-alt"></i> 464 Mimosa Ave, Raslouw AH, Centurion, 0157
